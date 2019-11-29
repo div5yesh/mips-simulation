@@ -24,14 +24,35 @@ class Simulation:
             self.pipeline.schedule(instruction)
             self.program_counter += 1
 
-        self.pipeline.update()
+        self.pipeline.update(self.clock)
         return curr_inst
 
     def run(self, cycles):
         inst = [""]
-        while self.clock < cycles:
-        # while inst[0] != "hlt": 
+        # while self.clock < cycles:
+        while inst[0] != "hlt": 
+            # cmd = input()
             inst = self.next_tick()
+
+        self.print_result()
+
+    def print_result(self):
+        header = "opcode".rjust(15," ") + \
+            "IF".rjust(10," ") + \
+            "ID".rjust(10," ") + \
+            "EX".rjust(10," ") + \
+            "MEM".rjust(10," ") + \
+            "WB".rjust(10," ")
+        print(header)
+
+        for inst in self.pipeline.completed:
+            result = inst.opcode.rjust(15," ") + \
+                str(inst.result["IF"]).rjust(10," ") + \
+                str(inst.result["ID"]).rjust(10," ") + \
+                str(inst.result["EX"]).rjust(10," ") + \
+                str(inst.result["MEM"]).rjust(10," ") + \
+                str(inst.result["WB"]).rjust(10," ")
+            print(result, "\n")
 
 parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
 mips_sim = Simulation("result.txt")

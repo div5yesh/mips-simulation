@@ -1,7 +1,4 @@
 class FunctionalUnit():
-    pipelined = False
-    latency = 0
-
     def __init__(self, info):
         self.unit = info[0]
         self.latency = int(info[1])
@@ -9,3 +6,9 @@ class FunctionalUnit():
 
     def __str__(self):
         return self.unit + ":" + str(self.latency) + "," + str(self.pipelined)
+
+    def set_execute_data(self):
+        self.instruction = None
+        self.ri = False
+        self.rj = False
+        self.rk = False
