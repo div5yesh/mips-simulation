@@ -25,9 +25,31 @@ class Instruction:
                 dest = instruction[-3]
         self.dest, self.src1, self.src2 = dest, src1, src2
 
+    def get_src_registers(self):
+        srcs = [self.src1, self.src2]
+        if self.opcode in ["s.d","s.w","daddi","dsubi","andi","ori"]:
+            srcs = [self.src1]
+        if self.opcode in ["l.d","l.w"]:
+            srcs = []
+        return srcs
+
+    def get_dest_register(self):
+        dest = self.dest
+        if self.opcode in ["l.d","l.w"]:
+            dest = self.src1
+        if self.opcode in ["s.w","s.d","hlt"]:
+            return ""
+        return dest
+
     def __str__(self):
         inst = self.opcode + " " + str(self.dest) + " " + str(self.src1) + " " + str(self.src2) + " " + str(self.itype)
         return inst + ": " + Stage(self.stage.value).name + " - " + str(self.remaning_cycles)
+
+    def check_raw(self, registers):
+        raw = False
+        for src in self.get_src_registers():
+            raw |= (src in registers and (registers[src] != None and registers[src] != self) and registers[src].stage != Stage.FIN)
+        return raw
 
     def execute_stage(self):
         self.remaning_cycles -= 1
@@ -36,6 +58,8 @@ class Instruction:
     def set_cycles(self, units):
         if self.stage == Stage.EX and self.itype != "ctrl" and self.itype != "hlt":
             self.remaning_cycles = units[self.itype].latency
+            if self.opcode in ["dadd","daddi","dsub","dsubi","and","andi","or","ori"]:
+                self.remaning_cycles += 1
         elif self.stage == Stage.MEM and self.opcode in ["l.d","s.d"]:
             self.remaning_cycles = 2
         else:
@@ -50,5 +74,4 @@ class Instruction:
                 return Stage.MEM
             else:
                 return Stage.WB
-
         return Stage(self.stage.value + 1)
