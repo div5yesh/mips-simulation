@@ -70,6 +70,6 @@ class Simulation:
 parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
 mips_sim = Simulation("result.txt")
 mips_sim.set_parser_data(parser)
-mips_sim.run(50)
+mips_sim.run(120)
 
 # mips_sim = Simulation(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5])

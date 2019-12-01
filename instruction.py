@@ -62,6 +62,16 @@ class Instruction:
         self.remaning_cycles -= 1
         return self.remaning_cycles <= 0
 
+    def execute_jmp(self, registers):
+        label = None
+        if self.opcode == "bne" and registers[self.dest] != registers[self.src1]:
+            label = self.src2
+        if self.opcode == "beq" and registers[self.dest] == registers[self.src1]:
+            label = self.src2
+        if self.opcode == "j":
+            label = self.src2
+        return label
+
     def execute(self, registers, data):
         if self.opcode == "daddi":
             self.accumulator = registers[self.src1] + int(self.src2)

@@ -61,8 +61,7 @@ class Pipeline:
                     else:
                         self.stages[inst.stage] = AVAILABLE
                         if inst.stage == Stage.ID and inst.itype == "ctrl":
-                            # check dest and src1 for eq and ne
-                            jump = inst.src2
+                            jump = inst.execute_jmp(self.registers)
 
                     inst.result[inst.stage.name] = int(clock)
                     inst.stage = next_stage
