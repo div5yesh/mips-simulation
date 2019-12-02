@@ -29,7 +29,7 @@ class Simulation:
                 self.jump_labels[instruction.jmp_label] = self.program_counter
 
             if self.pipeline.stages[Stage.IF]:
-                self.pipeline.schedule(instruction)
+                self.pipeline.schedule(instruction, self.program_counter)
                 self.program_counter += 1
 
         label = self.pipeline.update(self.clock)

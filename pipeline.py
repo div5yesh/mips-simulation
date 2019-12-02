@@ -16,8 +16,12 @@ class Pipeline:
 
     data_dep = dict()
 
+    icache = [[None] * 4] * 4
+
+    dcache = [[None] * 4] * 4
+
     def __init__(self):
-        print(self.stages)
+        pass
 
     def set_unit_data(self, config):
         for item in config:
@@ -28,12 +32,17 @@ class Pipeline:
         self.registers = registers
         self.memory = memory
         
-    def schedule(self, inst):
+    def schedule(self, inst, pc):
         self.stages[Stage.IF] = BUSY
         inst.stage = Stage.IF
-        # check in instruction cache
-        # if cache hit, set latency=6 and update cache
-        inst.remaning_cycles = self.units["i-cache"].latency
+        index = int(pc / 4)
+        offset = pc % 4
+        if not self.icache[index][offset]:
+            inst.remaning_cycles = 6
+            self.icache[index] = [1] * 4
+        else:
+            inst.remaning_cycles = self.units["i-cache"].latency
+
         self.instructions += [inst]
 
     def check_next_stage(self, next_stage, inst):
@@ -78,7 +87,7 @@ class Pipeline:
                             self.stages[next_stage] = BUSY
                             if next_stage == Stage.WB:
                                 inst.write_back(self.registers, self.memory)
-                        inst.set_cycles(self.units)
+                        inst.set_cycles(self.units, self.dcache, self.memory)
                             
             print(inst.opcode, inst.result)
         self.instructions = [e for e in self.instructions if e not in self.completed]
