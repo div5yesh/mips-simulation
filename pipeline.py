@@ -1,5 +1,6 @@
 from constants import *
 from functional_unit import FunctionalUnit
+from cache_manager import Cache
 
 class Pipeline:
     instructions = []
@@ -8,7 +9,6 @@ class Pipeline:
     stages = {
         Stage.IF: AVAILABLE, 
         Stage.ID: AVAILABLE, 
-        # Stage.EX: AVAILABLE,
         Stage.MEM: AVAILABLE,
         Stage.WB: AVAILABLE,
         Stage.FIN : AVAILABLE
@@ -18,7 +18,7 @@ class Pipeline:
 
     icache = [[None] * 4] * 4
 
-    dcache = [[None] * 4] * 4
+    dcache = Cache()
 
     def __init__(self):
         pass
@@ -26,7 +26,7 @@ class Pipeline:
     def set_unit_data(self, config):
         for item in config:
             self.units[item[0]] = FunctionalUnit(item)
-        self.units["int"] = FunctionalUnit(["int",1,"no"])
+        self.units["int"] = FunctionalUnit(["int",1,"yes"])
 
     def set_data(self, registers, memory):
         self.registers = registers
@@ -46,15 +46,23 @@ class Pipeline:
         self.instructions += [inst]
 
     def check_next_stage(self, next_stage, inst):
+
+        waw = inst.check_waw(self.data_dep)
+        if inst.stage == Stage.ID and waw:
+            inst.hazards["waw"] = "Y"
+            return False
+
+        raw = inst.check_raw(self.data_dep)
+        if inst.stage == Stage.ID and raw:
+            inst.hazards["raw"] = "Y"
+            return False
+
         if next_stage == Stage.EX:
             unit = self.units[inst.itype]
-            raw = inst.check_raw(self.data_dep)
             busy = unit.status == BUSY and not unit.pipelined
-            if raw:
-                return False
-            elif not busy:
-                return True
+            return not busy
         else:
+            if next_stage == Stage.WB and not self.stages[next_stage]: inst.hazards["struct"] = "Y"
             return self.stages[next_stage]
 
     def update(self, clock):
@@ -78,9 +86,8 @@ class Pipeline:
                         self.completed += [inst]
                         self.data_dep[inst.get_dest_register()] = None
                     else:
-                        if next_stage == Stage.ID:
-                            self.data_dep[inst.get_dest_register()] = inst
                         if next_stage == Stage.EX:
+                            self.data_dep[inst.get_dest_register()] = inst
                             inst.execute(self.registers, self.memory)
                             self.units[inst.itype].status = BUSY
                         else:
@@ -88,7 +95,6 @@ class Pipeline:
                             if next_stage == Stage.WB:
                                 inst.write_back(self.registers, self.memory)
                         inst.set_cycles(self.units, self.dcache, self.memory)
-                            
             print(inst.opcode, inst.result)
         self.instructions = [e for e in self.instructions if e not in self.completed]
         return jump

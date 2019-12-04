@@ -10,6 +10,7 @@ class Instruction:
         self.result = dict(zip(["IF","ID","EX","MEM","WB"], ["-"] * 5))
         self.set_props(instruction)
         self.read_operands(instruction)
+        self.hazards = dict(zip(["raw","war","waw","struct"], ["N"] * 4))
 
     def set_props(self, instruction):
         (itype, opcode) = (None, None)
@@ -33,6 +34,8 @@ class Instruction:
         srcs = [self.src1, self.src2]
         if self.opcode in ["s.d","s.w","daddi","dsubi","andi","ori"]:
             srcs = [self.src1]
+        if self.opcode in ["bne","beq"]:
+            srcs = [self.dest, self.src1]
         if self.opcode in ["l.d","l.w"]:
             srcs = []
         return srcs
@@ -41,9 +44,13 @@ class Instruction:
         dest = self.dest
         if self.opcode in ["l.d","l.w"]:
             dest = self.src1
-        if self.opcode in ["s.w","s.d","hlt"]:
+        if self.opcode in ["s.w","s.d","hlt"] or self.itype == "ctrl":
             return ""
         return dest
+
+    def print(self):
+        inst = self.opcode + " " + str(self.dest if self.dest else "") + " " + str(self.src1 if self.src1 else "") + " " + str(self.src2 if self.src2 else "")
+        return inst
 
     def __str__(self):
         inst = self.opcode + " " + str(self.dest) + " " + str(self.src1) + " " + str(self.src2) + " " + str(self.itype)
@@ -56,7 +63,8 @@ class Instruction:
         return raw
 
     def check_waw(self, data_dep):
-        pass
+        dest = self.get_dest_register()
+        return dest in data_dep and data_dep[dest] != None and data_dep[dest] != self
 
     def check_war(self, data_dep):
         pass
@@ -110,24 +118,15 @@ class Instruction:
             if self.opcode in ["dadd","daddi","dsub","dsubi","and","andi","or","ori"]:
                 self.remaning_cycles += 1
         elif self.stage == Stage.MEM:
-            index = int(self.addr / 4)
-            offset = self.addr % 4
-            if self.opcode in ["l.d","s.d"]:
-                self.remaning_cycles = 1
-            else:
-                self.remaning_cycles = 0
-
-            if not cache[0][offset]:
-                self.remaning_cycles += 6
-                idx = list(map(lambda x: x + index * 4, range(0,4)))
-                print(self.addr, idx)
-                cache[0] = list(map(lambda x: memory[x], idx))
-            else:
-                self.remaning_cycles += 1
+            if self.opcode in ["l.w","s.w","l.d","s.d"]:
+                addresses = [self.addr]
+                if self.opcode in ["l.d","s.d"]:
+                    addresses += [self.addr + 1]
+                self.remaning_cycles += cache.get_mem_cycles(memory, addresses)
         else:
             self.remaning_cycles = 1
 
-    def get_data_cache(self):
+    def get_data_for_cache(self):
         pass
 
     def get_next_stage(self):
@@ -135,7 +134,7 @@ class Instruction:
             return Stage.FIN
 
         if self.stage == Stage.EX:
-            if self.opcode in ["lw","sw","l.d","s.d"]:
+            if self.opcode in ["l.d","s.d","l.w","s.w"]:
                 return Stage.MEM
             else:
                 return Stage.WB
