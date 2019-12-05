@@ -14,11 +14,13 @@ class Pipeline:
         Stage.FIN : AVAILABLE
     }
 
+    WB_cycle = 0
+
     data_dep = dict()
 
     icache = [[None] * 4] * 4
 
-    dcache = Cache()
+    dcache = None
 
     def __init__(self):
         pass
@@ -27,6 +29,9 @@ class Pipeline:
         for item in config:
             self.units[item[0]] = FunctionalUnit(item)
         self.units["int"] = FunctionalUnit(["int",1,"yes"])
+        mem = self.units["mainmemory"].latency
+        cache = self.units["d-cache"].latency
+        self.dcache = Cache(mem,cache)
 
     def set_data(self, registers, memory):
         self.registers = registers
@@ -45,7 +50,7 @@ class Pipeline:
 
         self.instructions += [inst]
 
-    def check_next_stage(self, next_stage, inst):
+    def check_next_stage(self, next_stage, inst, clock):
 
         waw = inst.check_waw(self.data_dep)
         if inst.stage == Stage.ID and waw:
@@ -62,17 +67,19 @@ class Pipeline:
             busy = unit.status == BUSY and not unit.pipelined
             return not busy
         else:
-            if next_stage == Stage.WB and not self.stages[next_stage]: inst.hazards["struct"] = "Y"
+            if next_stage == Stage.WB:
+                if clock>= self.WB_cycle:
+                    return True
+                elif self.stages[next_stage]: inst.hazards["struct"] = "Y"
             return self.stages[next_stage]
 
     def update(self, clock):
-        print("----------------------------")
+        print("-" * 30)
         jump = None
         for inst in self.instructions:
-            # print(inst)
             if inst.process_stage():
                 next_stage = inst.get_next_stage()
-                if self.check_next_stage(next_stage, inst):
+                if self.check_next_stage(next_stage, inst, clock):
                     if inst.stage == Stage.EX:
                         self.units[inst.itype].status = AVAILABLE
                     else:
@@ -82,19 +89,22 @@ class Pipeline:
 
                     inst.result[inst.stage.name] = int(clock)
                     inst.stage = next_stage
+
                     if next_stage == Stage.FIN:
                         self.completed += [inst]
                         self.data_dep[inst.get_dest_register()] = None
+                    elif next_stage == Stage.EX:
+                        self.data_dep[inst.get_dest_register()] = inst
+                        inst.execute(self.registers, self.memory)
+                        self.units[inst.itype].status = BUSY
                     else:
-                        if next_stage == Stage.EX:
-                            self.data_dep[inst.get_dest_register()] = inst
-                            inst.execute(self.registers, self.memory)
-                            self.units[inst.itype].status = BUSY
-                        else:
-                            self.stages[next_stage] = BUSY
-                            if next_stage == Stage.WB:
-                                inst.write_back(self.registers, self.memory)
-                        inst.set_cycles(self.units, self.dcache, self.memory)
+                        self.stages[next_stage] = BUSY
+                        if next_stage == Stage.WB:
+                            inst.write_back(self.registers, self.memory)
+                            self.WB_cycle = clock
+
+                    inst.set_cycles(self.units, self.dcache, self.memory)
+
             print(inst.opcode, inst.result)
         self.instructions = [e for e in self.instructions if e not in self.completed]
         return jump

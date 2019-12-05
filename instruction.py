@@ -90,7 +90,7 @@ class Instruction:
             self.accumulator = registers[self.src1] - int(self.src2)
         if self.opcode == "andi":
             self.accumulator = registers[self.src1] & int(self.src2)
-        if self.opcode == "or1":
+        if self.opcode == "ori":
             self.accumulator = registers[self.src1] | int(self.src2)
 
         if self.opcode == "dadd":
@@ -121,8 +121,8 @@ class Instruction:
             if self.opcode in ["l.w","s.w","l.d","s.d"]:
                 addresses = [self.addr]
                 if self.opcode in ["l.d","s.d"]:
-                    addresses += [self.addr + 1]
-                self.remaning_cycles += cache.get_mem_cycles(memory, addresses)
+                    addresses += [self.addr + 4]
+                self.remaning_cycles = cache.get_mem_cycles(memory, addresses)
         else:
             self.remaning_cycles = 1
 

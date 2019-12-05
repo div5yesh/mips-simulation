@@ -50,7 +50,7 @@ class Simulation:
 
     def print_final_result(self):
         header = "instruction".ljust(20," ") + \
-            "IF".ljust(10," ") + \
+            "FT".ljust(10," ") + \
             "ID".ljust(10," ") + \
             "EX".ljust(10," ") + \
             "WB".ljust(10," ") + \
@@ -77,7 +77,7 @@ class Simulation:
 
     def print_result(self):
         header = "instruction".ljust(20," ") + \
-            "IF".ljust(10," ") + \
+            "FT".ljust(10," ") + \
             "ID".ljust(10," ") + \
             "EX".ljust(10," ") + \
             "MEM".ljust(10," ") + \
@@ -109,4 +109,4 @@ parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
 
 mips_sim = Simulation("result.txt")
 mips_sim.set_parser_data(parser)
-mips_sim.run(120)
+mips_sim.run(300)
