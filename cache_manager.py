@@ -24,14 +24,6 @@ class Cache:
         
         return cycles
 
-    # def cache_hit(self, memory, addr):
-    #     block = int(addr / (self.blocks * self.words))
-    #     bset = block % self.set
-
-    #     lru = self.lru[bset]
-    #     lru = (lru + 1) % self.set #?? get actual lru
-    #     self.lru[bset] = lru
-
     def check_addr_in_block(self, addr):
         block = int(addr / (self.blocks * self.words))
         bset = block % self.set

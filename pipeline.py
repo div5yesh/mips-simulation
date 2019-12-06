@@ -82,7 +82,7 @@ class Pipeline:
                 return self.stages[next_stage]
 
         elif next_stage == Stage.MEM:
-            if inst.opcode in ["l.d","l.w"]:
+            if inst.opcode in ["l.d","lw"]:
                 if (self.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: #?? 15,16
                     inst.hazards["struct"] = "Y"
                     return False

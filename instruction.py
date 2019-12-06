@@ -32,19 +32,19 @@ class Instruction:
 
     def get_src_registers(self):
         srcs = [self.src1, self.src2]
-        if self.opcode in ["s.d","s.w","daddi","dsubi","andi","ori"]:
+        if self.opcode in ["s.d","sw","daddi","dsubi","andi","ori"]:
             srcs = [self.src1]
         if self.opcode in ["bne","beq"]:
             srcs = [self.dest, self.src1]
-        if self.opcode in ["l.d","l.w"]:
+        if self.opcode in ["l.d","lw"]:
             srcs = []
         return srcs
 
     def get_dest_register(self):
         dest = self.dest
-        if self.opcode in ["l.d","l.w"]:
+        if self.opcode in ["l.d","lw"]:
             dest = self.src1
-        if self.opcode in ["s.w","s.d","hlt"] or self.itype == "ctrl":
+        if self.opcode in ["sw","s.d","hlt"] or self.itype == "ctrl":
             return ""
         return dest
 
@@ -102,7 +102,7 @@ class Instruction:
         if self.opcode == "or":
             self.accumulator = registers[self.src1] | registers[self.src2]
 
-        if self.opcode in ["l.d","l.w"]:
+        if self.opcode in ["lw","l.d","sw","s.d"]:
             arg_info = re.split("[()]", self.src2)
             register = arg_info[1]
             displacement = int(arg_info[0])
@@ -116,23 +116,15 @@ class Instruction:
         if self.stage == Stage.EX and self.itype != "ctrl" and self.itype != "hlt":
             self.remaning_cycles = units[self.itype].latency
         elif self.stage == Stage.MEM:
-            if self.opcode in ["l.w","l.d"]:
+            if self.opcode in ["lw","l.d","sw","s.d"]:
                 addresses = [self.addr]
-                if self.opcode == "l.d":
+                if self.opcode in ["l.d","s.d"]:
                     addresses += [self.addr + 4]
 
                 self.remaning_cycles = cache.get_mem_cycles(memory, addresses)
 
             else:
                 self.remaning_cycles = 1
-                if self.opcode in ["s.d","s.w"]:
-                    cache.access_count += 1
-                    cache.hit_count += 1
-
-                if self.opcode == "s.d":
-                    cache.access_count += 1
-                    cache.hit_count += 1
-                    self.remaning_cycles += 1
         else:
             self.remaning_cycles = 1
 
@@ -145,7 +137,7 @@ class Instruction:
 
         if self.stage == Stage.EX:
             if self.itype == "int":
-            # if self.opcode in ["l.d","s.d","l.w","s.w"]:
+            # if self.opcode in ["l.d","s.d","lw","sw"]:
                 return Stage.MEM
             else:
                 return Stage.WB
