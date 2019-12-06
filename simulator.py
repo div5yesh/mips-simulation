@@ -75,6 +75,11 @@ class Simulation:
                 str(inst.hazards["struct"]).ljust(10," ")
             print(result, "\n")
 
+        print("Total number of access requests for instruction cache:", self.pipeline.access_count)
+        print("Number of instruction cache hits:", self.pipeline.hit_count, "\n")
+        print("Total number of access requests for data cache:", self.pipeline.dcache.access_count)
+        print("Number of data cache hits:", self.pipeline.dcache.hit_count)
+
     def print_result(self):
         header = "instruction".ljust(20," ") + \
             "FT".ljust(10," ") + \
@@ -103,9 +108,16 @@ class Simulation:
                 str(inst.hazards["struct"]).ljust(10," ")
             print(result, "\n")
 
+        print("Total number of access requests for instruction cache:", self.pipeline.access_count)
+        print("Number of instruction cache hits:", self.pipeline.hit_count, "\n")
+        print("Total number of access requests for data cache:", self.pipeline.dcache.access_count)
+        print("Number of data cache hits:", self.pipeline.dcache.hit_count)
+
 # parser = Parser(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
 parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
+# parser = Parser("test_cases/test_case_1/inst.txt","test_cases/test_case_1/data.txt","test_cases/test_case_1/reg.txt","test_cases/test_case_1/config.txt")
 # parser = Parser("test_cases/test_case_2/inst.txt","test_cases/test_case_2/data.txt","test_cases/test_case_2/reg.txt","test_cases/test_case_2/config.txt")
+# parser = Parser("test_cases/test_case_3/inst.txt","test_cases/test_case_3/data.txt","test_cases/test_case_3/reg.txt","test_cases/test_case_3/config.txt")
 
 mips_sim = Simulation("result.txt")
 mips_sim.set_parser_data(parser)

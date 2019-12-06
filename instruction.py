@@ -59,12 +59,12 @@ class Instruction:
     def check_raw(self, data_dep):
         raw = False
         for src in self.get_src_registers():
-            raw |= (src in data_dep and (data_dep[src] != None and data_dep[src] != self) and data_dep[src].stage != Stage.FIN)
+            raw |= (src in data_dep and data_dep[src] != None and data_dep[src] != self and data_dep[src].stage != Stage.FIN)
         return raw
 
     def check_waw(self, data_dep):
         dest = self.get_dest_register()
-        return dest in data_dep and data_dep[dest] != None and data_dep[dest] != self
+        return dest in data_dep and data_dep[dest] != None and data_dep[dest] != self and data_dep[dest].stage != Stage.FIN
 
     def check_war(self, data_dep):
         pass
@@ -115,14 +115,24 @@ class Instruction:
     def set_cycles(self, units, cache, memory):
         if self.stage == Stage.EX and self.itype != "ctrl" and self.itype != "hlt":
             self.remaning_cycles = units[self.itype].latency
-            if self.opcode in ["dadd","daddi","dsub","dsubi","and","andi","or","ori"]:
-                self.remaning_cycles += 1
         elif self.stage == Stage.MEM:
-            if self.opcode in ["l.w","s.w","l.d","s.d"]:
+            if self.opcode in ["l.w","l.d"]:
                 addresses = [self.addr]
-                if self.opcode in ["l.d","s.d"]:
+                if self.opcode == "l.d":
                     addresses += [self.addr + 4]
+
                 self.remaning_cycles = cache.get_mem_cycles(memory, addresses)
+
+            else:
+                self.remaning_cycles = 1
+                if self.opcode in ["s.d","s.w"]:
+                    cache.access_count += 1
+                    cache.hit_count += 1
+
+                if self.opcode == "s.d":
+                    cache.access_count += 1
+                    cache.hit_count += 1
+                    self.remaning_cycles += 1
         else:
             self.remaning_cycles = 1
 
@@ -134,7 +144,8 @@ class Instruction:
             return Stage.FIN
 
         if self.stage == Stage.EX:
-            if self.opcode in ["l.d","s.d","l.w","s.w"]:
+            if self.itype == "int":
+            # if self.opcode in ["l.d","s.d","l.w","s.w"]:
                 return Stage.MEM
             else:
                 return Stage.WB
