@@ -82,9 +82,8 @@ class Pipeline:
                 return self.stages[next_stage]
 
         elif next_stage == Stage.MEM:
-            if inst.opcode in ["l.d","l.w"] and not self.dcache.check_addr_in_block(inst.addr):
-            # check for busy and mem cache miss
-                if self.bus == BUSY or self.stages[next_stage] == BUSY: #?? 15,16
+            if inst.opcode in ["l.d","l.w"]:
+                if (self.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: #?? 15,16
                     inst.hazards["struct"] = "Y"
                     return False
             return self.stages[next_stage]
@@ -132,8 +131,9 @@ class Pipeline:
             print(inst.opcode, inst.result)
 
         if jump or hlt:
-            self.completed += [self.instructions[-1]]
-            self.stages[Stage.ID] = AVAILABLE
+            instruction = self.instructions[-1]
+            self.completed += [instruction]
+            self.stages[instruction.stage] = AVAILABLE
 
         self.instructions = [e for e in self.instructions if e not in self.completed]
         return jump
