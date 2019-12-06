@@ -13,16 +13,18 @@ class Cache:
 
     def get_mem_cycles(self, memory, addresses):
         cycles = 0
+        hit = True
         for addr in addresses:
             self.access_count += 1
             if self.check_addr_in_block(addr):
                 self.hit_count += 1
                 cycles += 1
             else:
+                hit = False
                 self.cache_miss(memory, addr)
                 cycles += 2 * (self.mem_t + self.cache_t)
         
-        return cycles
+        return cycles, hit
 
     def check_addr_in_block(self, addr):
         block = int(addr / (self.blocks * self.words))

@@ -2,11 +2,14 @@ from constants import *
 import re
 
 class Instruction:
+
+    bus = AVAILABLE
+
     def __init__(self, instruction):
         self.stage = None
         self.jmp_label = None
         self.accumulator = 0
-        self.remaning_cycles = 0
+        self.remaining_cycles = 0
         self.result = dict(zip(["IF","ID","EX","MEM","WB"], ["-"] * 5))
         self.set_props(instruction)
         self.read_operands(instruction)
@@ -54,7 +57,7 @@ class Instruction:
 
     def __str__(self):
         inst = self.opcode + " " + str(self.dest) + " " + str(self.src1) + " " + str(self.src2) + " " + str(self.itype)
-        return inst + ": " + Stage(self.stage.value).name + " - " + str(self.remaning_cycles)
+        return inst + ": " + Stage(self.stage.value).name + " - " + str(self.remaining_cycles)
 
     def check_raw(self, data_dep):
         raw = False
@@ -70,8 +73,8 @@ class Instruction:
         pass
 
     def process_stage(self):
-        self.remaning_cycles -= 1
-        return self.remaning_cycles <= 0
+        self.remaining_cycles -= 1
+        return self.remaining_cycles <= 0
 
     def execute_jmp(self, registers):
         label = None
@@ -114,19 +117,32 @@ class Instruction:
 
     def set_cycles(self, units, cache, memory):
         if self.stage == Stage.EX and self.itype != "ctrl" and self.itype != "hlt":
-            self.remaning_cycles = units[self.itype].latency
+            self.remaining_cycles = units[self.itype].latency
         elif self.stage == Stage.MEM:
-            if self.opcode in ["lw","l.d","sw","s.d"]:
+            if self.opcode in ["lw","l.d"]:
                 addresses = [self.addr]
-                if self.opcode in ["l.d","s.d"]:
+                if self.opcode in ["l.d"]:
                     addresses += [self.addr + 4]
 
-                self.remaning_cycles = cache.get_mem_cycles(memory, addresses)
+                self.remaining_cycles, _ = cache.get_mem_cycles(memory, addresses)
+                
+            elif self.opcode in ["sw","s.d"]:
+                addresses = [self.addr]
+                if self.opcode in ["s.d"]:
+                    addresses += [self.addr + 4]
 
+                _, hit = cache.get_mem_cycles(memory, addresses)
+
+                if hit:
+                    if self.opcode == "sw": self.remaining_cycles = cache.cache_t
+                    if self.opcode == "s.d": self.remaining_cycles = 2 * cache.cache_t
+                else:
+                    if self.opcode == "sw": self.remaining_cycles = 2 * (cache.cache_t + cache.mem_t) + cache.cache_t
+                    if self.opcode == "s.d": self.remaining_cycles = 2 * (cache.cache_t + cache.mem_t) + 2 * cache.cache_t
             else:
-                self.remaning_cycles = 1
+                self.remaining_cycles = 1
         else:
-            self.remaning_cycles = 1
+            self.remaining_cycles = 1
 
     def get_data_for_cache(self):
         pass
@@ -137,7 +153,6 @@ class Instruction:
 
         if self.stage == Stage.EX:
             if self.itype == "int":
-            # if self.opcode in ["l.d","s.d","lw","sw"]:
                 return Stage.MEM
             else:
                 return Stage.WB

@@ -18,7 +18,7 @@ class Pipeline:
 
     data_dep = dict()
 
-    bus = AVAILABLE
+    # bus = AVAILABLE
     icache = [[],[],[],[]]
     access_count = 0
     hit_count = 0
@@ -31,7 +31,7 @@ class Pipeline:
     def set_unit_data(self, config):
         for item in config:
             self.units[item[0]] = FunctionalUnit(item)
-        self.units["int"] = FunctionalUnit(["int",1,"yes"])
+        self.units["int"] = FunctionalUnit(["int",1,"no"])
         mem = self.units["mainmemory"].latency
         cache = self.units["d-cache"].latency
         self.dcache = Cache(mem,cache)
@@ -49,11 +49,11 @@ class Pipeline:
 
         self.access_count += 1
         if pc not in self.icache[block]:
-            self.bus = BUSY
-            inst.remaning_cycles = 2 * (self.units["mainmemory"].latency + self.units["i-cache"].latency)
+            inst.bus = BUSY
+            inst.remaining_cycles = 2 * (self.units["mainmemory"].latency + self.units["i-cache"].latency)
             self.icache[block] = tuple(map(lambda x: x + base, range(0,4)))
         else:
-            inst.remaning_cycles = self.units["i-cache"].latency
+            inst.remaining_cycles = self.units["i-cache"].latency
             self.hit_count += 1
 
         self.instructions += [inst]
@@ -83,7 +83,7 @@ class Pipeline:
 
         elif next_stage == Stage.MEM:
             if inst.opcode in ["l.d","lw"]:
-                if (self.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: #?? 15,16
+                if (inst.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: #?? 15,16
                     inst.hazards["struct"] = "Y"
                     return False
             return self.stages[next_stage]
@@ -120,8 +120,8 @@ class Pipeline:
                         self.units[inst.itype].status = BUSY
                     else:
                         self.stages[next_stage] = BUSY
-                        if next_stage == Stage.ID and self.bus == BUSY:
-                            self.bus = AVAILABLE
+                        if next_stage == Stage.ID and inst.bus == BUSY:
+                            inst.bus = AVAILABLE
                         elif next_stage == Stage.WB:
                             inst.write_back(self.registers, self.memory)
                             self.WB_cycle = clock
