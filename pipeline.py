@@ -18,7 +18,7 @@ class Pipeline:
 
     data_dep = dict()
 
-    # bus = AVAILABLE
+    bus = AVAILABLE
     icache = [[],[],[],[]]
     access_count = 0
     hit_count = 0
@@ -49,7 +49,7 @@ class Pipeline:
 
         self.access_count += 1
         if pc not in self.icache[block]:
-            inst.bus = BUSY
+            self.bus = BUSY
             inst.remaining_cycles = 2 * (self.units["mainmemory"].latency + self.units["i-cache"].latency)
             self.icache[block] = tuple(map(lambda x: x + base, range(0,4)))
         else:
@@ -83,7 +83,7 @@ class Pipeline:
 
         elif next_stage == Stage.MEM:
             if inst.opcode in ["l.d","lw"]:
-                if (inst.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: #?? 15,16
+                if (self.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: # bugfix: 15,16 - bus availibility
                     inst.hazards["struct"] = "Y"
                     return False
             return self.stages[next_stage]
@@ -92,11 +92,12 @@ class Pipeline:
             return self.stages[next_stage]
 
     def update(self, clock):
-        print("\n","-" * 15, "CLOCK:", clock, "-" * 15)
+        # print("\n","-" * 15, "CLOCK:", clock, "-" * 15)
         jump = None
         hlt = False
         for inst in self.instructions:
-            if inst.process_stage():
+            stage_finish = inst.process_stage()
+            if stage_finish:
                 next_stage = inst.get_next_stage()
                 if self.check_next_stage(next_stage, inst, clock):
                     if inst.stage == Stage.EX:
@@ -120,15 +121,18 @@ class Pipeline:
                         self.units[inst.itype].status = BUSY
                     else:
                         self.stages[next_stage] = BUSY
-                        if next_stage == Stage.ID and inst.bus == BUSY:
-                            inst.bus = AVAILABLE
+                        if next_stage == Stage.ID and self.bus == BUSY:
+                            self.bus = AVAILABLE
                         elif next_stage == Stage.WB:
                             inst.write_back(self.registers, self.memory)
                             self.WB_cycle = clock
 
                     inst.set_cycles(self.units, self.dcache, self.memory)
+            elif inst.remaining_cycles == 1:
+                if inst.stage == Stage.IF: self.bus = AVAILABLE
+                # if inst.stage == Stage.MEM: inst.execute_mem(self.registers, self.memory)
 
-            print(inst.opcode, inst.result)
+            # print(inst.opcode, inst.result)
 
         if jump or hlt:
             instruction = self.instructions[-1]

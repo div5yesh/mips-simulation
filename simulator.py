@@ -8,7 +8,7 @@ class Simulation:
     clock = 0
     program_counter = 0
 
-    def __init__(self, output_file):
+    def __init__(self):
         # self.output = []
         self.jump_labels = dict()
         self.pipeline = Pipeline()
@@ -39,17 +39,17 @@ class Simulation:
         return instruction
 
     def run(self, cycles):
-        inst = Instruction(["","",""])
-        while self.clock < cycles:
-        # while not (inst.opcode == "hlt" and inst.stage == Stage.ID): 
-            # cmd = input()
+        # inst = self.pipeline.instructions[0]
+        # while self.clock < cycles:
+        while len(self.pipeline.instructions) > 0 or self.program_counter < len(self.data.program):
+        # while not (inst.opcode == "hlt" and inst.stage == Stage.FIN): 
             inst = self.next_tick()
 
-        self.print_result()
-        # self.print_final_result()
+        # self.print_result()
+        self.print_final_result()
 
     def print_final_result(self):
-        header = "instruction".ljust(20," ") + \
+        header = "Instruction".ljust(25," ") + \
             "FT".ljust(10," ") + \
             "ID".ljust(10," ") + \
             "EX".ljust(10," ") + \
@@ -64,7 +64,7 @@ class Simulation:
 
         for inst in final_inst:
             excycles = inst.result["EX"]  if inst.result["MEM"] == "-" else inst.result["MEM"]
-            result = inst.print().ljust(20," ") + \
+            result = inst.print().ljust(25," ") + \
                 str(inst.result["IF"]).ljust(10," ") + \
                 str(inst.result["ID"]).ljust(10," ") + \
                 str(excycles).ljust(10," ") + \
@@ -81,7 +81,7 @@ class Simulation:
         print("Number of data cache hits:", self.pipeline.dcache.hit_count)
 
     def print_result(self):
-        header = "instruction".ljust(20," ") + \
+        header = "Instruction".ljust(25," ") + \
             "FT".ljust(10," ") + \
             "ID".ljust(10," ") + \
             "EX".ljust(10," ") + \
@@ -96,7 +96,7 @@ class Simulation:
         final_inst = list(sorted(self.pipeline.completed, key=lambda x: x.result["IF"]))
 
         for inst in final_inst:
-            result = inst.print().ljust(20," ") + \
+            result = inst.print().ljust(25," ") + \
                 str(inst.result["IF"]).ljust(10," ") + \
                 str(inst.result["ID"]).ljust(10," ") + \
                 str(inst.result["EX"]).ljust(10," ") + \
@@ -114,11 +114,12 @@ class Simulation:
         print("Number of data cache hits:", self.pipeline.dcache.hit_count)
 
 # parser = Parser(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
-parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
-# parser = Parser("test_cases/test_case_1/inst.txt","test_cases/test_case_1/data.txt","test_cases/test_case_1/reg.txt","test_cases/test_case_1/config.txt")
+
+# parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
+parser = Parser("test_cases/test_case_1/inst.txt","test_cases/test_case_1/data.txt","test_cases/test_case_1/reg.txt","test_cases/test_case_1/config.txt")
 # parser = Parser("test_cases/test_case_2/inst.txt","test_cases/test_case_2/data.txt","test_cases/test_case_2/reg.txt","test_cases/test_case_2/config.txt")
 # parser = Parser("test_cases/test_case_3/inst.txt","test_cases/test_case_3/data.txt","test_cases/test_case_3/reg.txt","test_cases/test_case_3/config.txt")
 
-mips_sim = Simulation("result.txt")
+mips_sim = Simulation()
 mips_sim.set_parser_data(parser)
 mips_sim.run(300)
