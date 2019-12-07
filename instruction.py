@@ -71,7 +71,9 @@ class Instruction:
         return dest in data_dep and data_dep[dest] != None and data_dep[dest] != self and data_dep[dest].stage != Stage.FIN
 
     def check_war(self, data_dep):
-        pass
+        arg_info = re.split("[()]", self.src2)
+        st_src = arg_info[1]
+        return st_src in data_dep and data_dep[st_src] != None and data_dep[st_src] != self and data_dep[st_src].stage != Stage.FIN
 
     def process_stage(self):
         self.remaining_cycles -= 1

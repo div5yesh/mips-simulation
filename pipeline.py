@@ -70,6 +70,15 @@ class Pipeline:
             inst.hazards["raw"] = "Y"
             return False
 
+        if inst.stage == Stage.MEM and inst.opcode in ["sw","s.d"]:
+            if inst.check_war(self.data_dep): 
+                inst.hazards["war"] = "Y"
+                return False
+
+        # if inst.stage == Stage.ID and not self.stages[inst.stage]:
+        #     if inst.hazards["raw"] != "Y" and inst.hazards["waw"] != "Y":
+        #         inst.hazards["struct"] = "Y"
+
         if next_stage == Stage.EX:
             unit = self.units[inst.itype]
             busy = unit.status == BUSY and not unit.pipelined
@@ -79,6 +88,7 @@ class Pipeline:
             if clock > self.WB_cycle: #?? 83,84
                 return True
             else:
+                inst.hazards["struct"] = "Y"
                 return self.stages[next_stage]
 
         elif next_stage == Stage.MEM:
@@ -86,6 +96,7 @@ class Pipeline:
                 if (self.bus == BUSY and not self.dcache.check_addr_in_block(inst.addr)) or self.stages[next_stage] == BUSY: # bugfix: 15,16 - bus availibility
                     inst.hazards["struct"] = "Y"
                     return False
+            if not self.stages[next_stage]: inst.hazards["struct"] = "Y"
             return self.stages[next_stage]
             
         else:
