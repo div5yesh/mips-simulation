@@ -113,10 +113,10 @@ class Simulation:
         print("Total number of access requests for data cache:", self.pipeline.dcache.access_count)
         print("Number of data cache hits:", self.pipeline.dcache.hit_count)
 
-# parser = Parser(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
+parser = Parser(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
 
 # parser = Parser("inst.txt","data.txt","reg.txt","config.txt")
-parser = Parser("test_cases/test_case_1/inst.txt","test_cases/test_case_1/data.txt","test_cases/test_case_1/reg.txt","test_cases/test_case_1/config.txt")
+# parser = Parser("test_cases/test_case_1/inst.txt","test_cases/test_case_1/data.txt","test_cases/test_case_1/reg.txt","test_cases/test_case_1/config.txt")
 # parser = Parser("test_cases/test_case_2/inst.txt","test_cases/test_case_2/data.txt","test_cases/test_case_2/reg.txt","test_cases/test_case_2/config.txt")
 # parser = Parser("test_cases/test_case_3/inst.txt","test_cases/test_case_3/data.txt","test_cases/test_case_3/reg.txt","test_cases/test_case_3/config.txt")
 

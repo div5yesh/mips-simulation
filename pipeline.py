@@ -114,7 +114,9 @@ class Pipeline:
                     if inst.stage == Stage.EX:
                         self.units[inst.itype].status = AVAILABLE
                     else:
-                        self.stages[inst.stage] = AVAILABLE
+                        if inst.stage != Stage.WB: 
+                            self.stages[inst.stage] = AVAILABLE
+                            
                         if inst.stage == Stage.ID:
                             if inst.itype == "ctrl":
                                 jump = inst.execute_jmp(self.registers)
